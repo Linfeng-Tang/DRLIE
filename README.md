@@ -1,2 +1,2 @@
 # DRLIE
-The code for “DRLIE: flexible Low-Light Image Enhancement via Disentangled Representations”
+The code for “DRLIE: Flexible Low-Light Image Enhancement via Disentangled Representations”
