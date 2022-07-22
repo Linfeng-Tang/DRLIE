@@ -1,13 +1,18 @@
 # DRLIE
 This is official Pytorch implementation of "[DRLIE: Flexible Low-Light Image Enhancement via Disentangled Representations](https://ieeexplore.ieee.org/document/9833451)"
 ## Framework
-![A typical schematic of our proposed DRLIE](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/first_show.jpg)
+![A typical schematic of our proposed DRLIE.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/first_show.jpg)
+A typical schematic of our proposed DRLIE.
 
 ![Schematic of the proposed custom illumination guided low-light image enhancement algorithm based on disentangle representations.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/Low-image-Enhance.jpg)
+Schematic of the proposed custom illumination guided low-light image enhancement algorithm based on disentangle representations.
 
-![Framework of disentanglement model for multiexposure images](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/training.jpg)
+![Framework of disentanglement model for multiexposure images.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/training.jpg)
+Framework of disentanglement model for multiexposure images.
 
 ![Network architecture of the content encoder, attribute encoder, and generator.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/network-Rebuttal.jpg)
+Network architecture of the content encoder, attribute encoder, and generator.
+
 ## Coding
 ### Recommended Environment
  - [ ] tensorflow-gpu 1.14.0 
@@ -16,8 +21,8 @@ This is official Pytorch implementation of "[DRLIE: Flexible Low-Light Image Enh
  - [ ] opencv 3.4.2 
 
  ### To Train
- Please place the underexposed images from the [MEF](https://github.com/csjcai/SICE) dataset in **. /dataset/over2under/trainA** 
-	and put the overexposed images in **. /dataset/over2under/trainB**
+ Please place the underexposed images from the [MEF](https://github.com/csjcai/SICE) dataset in **./dataset/over2under/trainA** 
+	and put the overexposed images in **./dataset/over2under/trainB**
 	
 Then, training the disentanglement model by entering the following code
 
@@ -30,18 +35,25 @@ The test images from the AGLIE datset please put in ./dataset/AGLIE/ and the gui
 
 ## Experiment Results
 ![Visual results of different low-light image enhancement methods on the AGLIE dataset.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/figure_AGLIE.jpg)
+Visual results of different low-light image enhancement methods on the AGLIE dataset.
 
 ![Visual results of different low-light image enhancement methods on the MEF dataset.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/figure_MEF.jpg)
+Visual results of different low-light image enhancement methods on the MEF dataset.
 
 ![Visual results of different low-light image enhancement methods on the LOL dataset.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/figure_LOL.jpg)
+Visual results of different low-light image enhancement methods on the LOL dataset.
 
 ![Visual results of different low-light image enhancement methods on the VV dataset.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/figure_VV.jpg)
+Visual results of different low-light image enhancement methods on the VV dataset.
 
 ![Example of custom illumination adjustment with specific exposure levels.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/gamma_guide.jpg)
+Example of custom illumination adjustment with specific exposure levels.
 
 ![Visual results of controllable illumination manipulation with multiexposure guide images.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/Exposure_guide.jpg)
+Visual results of controllable illumination manipulation with multiexposure guide images.
 
 ![Some typical examples of flexible illumination adjustment, guided by the MIT-Adobe FiveK dataset.](https://github.com/Linfeng-Tang/DRLIE/blob/main/DLIE/Expert_Guide.jpg)
+Some typical examples of flexible illumination adjustment, guided by the MIT-Adobe FiveK dataset.
 
 ## Citation
 ```
