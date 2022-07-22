@@ -1,2 +1,2 @@
 # DRLIE
-The code for “DRLIE: Flexible Low-Light Image Enhancement via Disentangled Representations”
+This is official Pytorch implementation of "[DRLIE: Flexible Low-Light Image Enhancement via Disentangled Representations](https://ieeexplore.ieee.org/document/9833451)"
