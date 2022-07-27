@@ -9,11 +9,11 @@ def parse_args():
     desc = "Tensorflow implementation of DRIT"
 
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--phase', type=str, default='guide', help='[train, test, guide]')
+    parser.add_argument('--phase', type=str, default='train', help='[train, test, guide]')
     parser.add_argument('--dataset', type=str, default='MEF', help='dataset_name')
     parser.add_argument('--augment_flag', type=str2bool, default=True, help='Image augmentation use or not')
     parser.add_argument('--decay_flag', type=str2bool, default=True, help='using learning rate decay')
-    parser.add_argument('--epoch', type=int, default=400, help='The number of epochs to run')
+    parser.add_argument('--epoch', type=int, default=10000, help='The number of epochs to run')
     parser.add_argument('--decay_epoch', type=int, default=8, help='The number of decay epochs to run')
     parser.add_argument('--iteration', type=int, default=10000, help='The number of training iterations')
     parser.add_argument('--batch_size', type=int, default=2, help='The batch size')

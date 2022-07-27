@@ -34,7 +34,6 @@ class ImageData:
 def load_test_data(image_path, size=256):
     # img = misc.imread(image_path, mode='RGB')
     # img = misc.imresize(img, [size, size])
-    print('image_path: ', image_path)
     img = cv2.imread(image_path, 1)
     Shape = img.shape
     h = Shape[0] // 4 * 4

@@ -63,11 +63,6 @@ class DRIT(object):
         self.guide_num = args.guide_num
         self.sample_dir = os.path.join(args.sample_dir, self.model_dir)
         check_folder(self.sample_dir)
-        # self.trainA_dataset = glob('./dataset/{}/*.*'.format(self.dataset_name + '/trainA'))
-        self.trainA_dataset = './dataset/{}'.format(self.dataset_name + '/trainA')
-        # self.trainB_dataset = glob('./dataset/{}/*.*'.format(self.dataset_name + '/trainB'))
-        self.trainB_dataset = './dataset/{}'.format(self.dataset_name + '/trainB')
-        self.dataset_num = max(len(self.trainA_dataset), len(self.trainB_dataset))
 
     def content_encoder(self, x, is_training=True, reuse=False, scope='content_encoder'):
         feature_map = []
@@ -76,7 +71,7 @@ class DRIT(object):
             x = conv(x, channel, kernel=7, stride=1, pad=3, pad_type='reflect', scope='conv')
             x = lrelu(x, 0.01)
             for i in range(2):
-                feature_map.append(x) #在下采样前将feature map保存至feature_map列表中，用于补充上采样过程中带来的信息丢失。
+                feature_map.append(x) 
                 x = conv(x, channel * 2, kernel=3, stride=2, pad=1, pad_type='reflect', scope='conv_' + str(i))
                 # x = layer_norm(x, scope='layer_norm_' + str(i))
                 x = relu(x)
@@ -142,7 +137,6 @@ class DRIT(object):
         with tf.variable_scope(scope, reuse=reuse):
             z = self.MLP(z, reuse=reuse)
             z = tf.split(z, num_or_size_splits=self.n_layer, axis=-1)
-            # print("generator z:", z)
             for i in range(self.n_layer):
                 x = mis_resblock(x, z[i], channel, scope='mis_resblock_' + str(i))
 
@@ -181,8 +175,6 @@ class DRIT(object):
                 x = x + feature#tf.concat([x, feature], -1)
 
                 channel = channel // 2
-            # channel1 = x.get_shape().as_list()[-1]
-            # print(channel1)
             channel = x.get_shape().as_list()[-1]
             x = expand_concat(x, z)
             channel = channel + self.n_z
@@ -318,6 +310,7 @@ class DRIT(object):
         with tf.device('/gpu:0'):
             content_a, attribute_a, feature_a, mean_a, logvar_a = self.Encoder(self.domain_A)
             content_b, attribute_b, feature_b, mean_b, logvar_b = self.Encoder(self.domain_B, reuse=True)
+
         with tf.device('/gpu:1'):
             fake_a = self.Decoder(content_B=content_b, attribute_A=attribute_a, feature_A=feature_b)
             fake_b = self.Decoder(content_B=content_a, attribute_A=attribute_b, feature_A=feature_a, reuse=True)
@@ -428,9 +421,7 @@ class DRIT(object):
         self.real_B = self.domain_B
 
     def train(self):
-        # load train data
-        # print('trainA_dataset :', self.trainA_dataset)
-        dataset_name = 'train_mef.h5'
+        dataset_name = './train_mef.h5'
         f = h5py.File(dataset_name, 'r')
         sources = f['data'][:]
         print(sources.shape)
@@ -442,9 +433,6 @@ class DRIT(object):
         n_batches = int(num_imgs // self.batch_size)
         print('Train images number %d, Batches: %d.\n' % (num_imgs, n_batches))
         self.iteration = n_batches
-        log_name = '{}_log.txt'.format(self.model_dir)
-        if os.path.exists(log_name):
-            os.remove(log_name)
 
         if mod > 0:
             print('Train set has been trimmed %d samples...\n' % mod)
@@ -484,7 +472,6 @@ class DRIT(object):
             for idx in range(0, batch_idxs):
                 patch_A = sources[idx * self.batch_size:(idx * self.batch_size + self.batch_size), :, :, 0:3]
                 patch_B = sources[idx * self.batch_size:(idx * self.batch_size + self.batch_size), :, :, 3:6]
-                # print(patch_A)
                 patch_A = (patch_A - 0.5) * 2
                 patch_B = (patch_B - 0.5) * 2
                 train_feed_dict = {
@@ -512,13 +499,7 @@ class DRIT(object):
                           "attribute loss:[%.4f], Reconstruct loss:[%.4f], Fake loss:[%.4f]"
                           % (
                               epoch, self.epoch, idx, batch_idxs, GAD_loss, GAA_loss, GAR_loss, GAF_loss))
-                    with open(log_name, 'a') as log:
-                        log.write("The loss of domain A:\n")
-                        log.write("Epoch: [%2d/%2d] [%4d/%4d], Domain loss:[%.4f], "
-                                  "attribute loss:[%.4f], Reconstruct loss:[%.4f], Fake loss:[%.4f]"
-                                  % (epoch, self.epoch, idx, batch_idxs, GAD_loss, GAA_loss, GAR_loss,
-                                     GAF_loss))
-                        log.write('\n')
+                    
                     GBD_loss, GCon_loss, GBA_loss, GBR_loss, GBF_loss = self.sess.run(
                         [self.GBD_loss, self.GC_loss, self.GBA_loss, self.GBR_loss, self.GBF_loss],
                         feed_dict=train_feed_dict)
@@ -526,13 +507,7 @@ class DRIT(object):
                     print("Epoch: [%2d/%2d] [%4d/%4d], Domain loss:[%.4f], Generator_Content loss: [%.4f], "
                           "attribute loss:[%.4f], Reconstruct loss:[%.4f], Fake loss:[%.4f]"
                           % (epoch, self.epoch, idx, batch_idxs, GBD_loss, GCon_loss, GBA_loss, GBR_loss, GBF_loss))
-                    with open(log_name, 'a') as log:
-                        log.write("The loss of domain B:\n")
-                        log.write("Epoch: [%2d/%2d] [%4d/%4d], Domain loss:[%.4f], Generator_Content loss: [%.4f], "
-                                  "attribute loss:[%.4f], Reconstruct loss:[%.4f], Fake loss:[%.4f]"
-                                  % (epoch, self.epoch, idx, batch_idxs, GBD_loss, GCon_loss, GBA_loss, GBR_loss,
-                                     GBF_loss))
-                        log.write('\n')
+                    
                     DA_loss, DB_loss= self.sess.run(
                         [self.DA_loss, self.DB_loss],
                         feed_dict=train_feed_dict)
@@ -540,12 +515,7 @@ class DRIT(object):
                     print(
                         "Epoch: [%2d/%2d] [%4d/%4d], Discriminator_A loss:[%.4f], Discriminator_B loss: [%.4f]"
                         % (epoch, self.epoch, idx, batch_idxs, DA_loss, DB_loss))
-                    with open(log_name, 'a') as log:
-                        log.write("The loss of discriminator:\n")
-                        log.write(
-                            "Epoch: [%2d/%2d] [%4d/%4d], Discriminator_A loss:[%.4f], Discriminator_B loss: [%.4f]"
-                            % (epoch, self.epoch, idx, batch_idxs, DA_loss, DB_loss))
-                        log.write('\n')
+                    
                 if np.mod(idx + 1, self.print_freq) == 0:
                     save_images(batch_A_images, [self.batch_size, 1],
                                 './{}/real_A_{:03d}_{:05d}.jpg'.format(self.sample_dir, epoch, idx + 1))
@@ -570,7 +540,6 @@ class DRIT(object):
             concat = "_concat"
         else:
             concat = ""
-
         if self.sn:
             sn = "_sn"
         else:
@@ -582,7 +551,6 @@ class DRIT(object):
 
     def save(self, checkpoint_dir, step):
         checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
-
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
@@ -591,16 +559,10 @@ class DRIT(object):
     def load(self, checkpoint_dir):
         print(" [*] Reading checkpoints...")
         checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
-
-        # print("checkpoint dir:", checkpoint_dir)
-
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            # print(ckpt_name)
             self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
-            # ckpt_name = r'checkpoint/DRIT_test_lsgan_4layer_4dis_3scale_5con_sn/DRIT.model-20281'
-            # self.saver.restore(self.sess, ckpt_name)
             counter = int(ckpt_name.split('-')[-1])
             print(" [*] Success to read {}".format(ckpt_name))
             return True, counter
@@ -609,182 +571,56 @@ class DRIT(object):
             return False, 0
 
     def guide_test(self):
-        tf.global_variables_initializer().run()
-        test_dir = r'./dataset/{}'.format(self.dataset_name)
-        self.saver = tf.train.Saver()
-        could_load, checkpoint_counter = self.load(self.checkpoint_dir)
+        if self.direction == 'a2b':
+            tf.global_variables_initializer().run()
+            test_dir = r'./dataset/{}'.format(self.dataset_name)
+            self.saver = tf.train.Saver()
+            could_load, checkpoint_counter = self.load(self.checkpoint_dir)
+            if could_load:
+                print(" [*] Load SUCCESS")
+            else:
+                print(" [!] Load failed...")
+            """ Guided Image Translation """
 
-        if could_load:
-            print(" [*] Load SUCCESS")
-        else:
-            print(" [!] Load failed...")
-        """ Guided Image Translation """
+            filelist = os.listdir(test_dir)
+            filelist.sort(key=lambda x: int(x[0:-4]))
+            guide_file = r'guide/'+ str(self.guide_num) + '.png'
+            guide_name = os.path.basename(guide_file)
+            self.save_dir = os.path.join(self.result_dir, self.dataset_name) 
+            check_folder(self.save_dir)            
+            self.content_image_A = tf.placeholder(tf.float32, [1, None, None, self.img_ch],
+                                                      name='content_image_A')
+            self.attribute_image = tf.placeholder(tf.float32, [1, None, None, self.img_ch],
+                                                    name='guide_attribute_image')
 
-        filelist = os.listdir(test_dir)
-        filelist.sort(key=lambda x: int(x[0:-4]))
-        guide_file = r'guide/customized_guide/' + str(self.guide_num) + '.png'
-        alpha = 0.8
-        guide_name = os.path.basename(guide_file)
-        guide_num = guide_name.split('.')[0]
-        self.fusion_dir = os.path.join(self.result_dir, self.model_dir, self.dataset_name,  guide_num)
-        print(self.fusion_dir)
-        check_folder(self.fusion_dir)
-        file_num = len(filelist)
-        self.content_image_A = tf.placeholder(tf.float32, [1, None, None, self.img_ch],
-                                                  name='content_image_A')
-        self.attribute_image = tf.placeholder(tf.float32, [1, None, None, self.img_ch],
-                                                name='guide_attribute_image')
-        with tf.device('/gpu:1'):
-            content_A, feature_A = self.content_encoder(self.content_image_A, is_training=False,
-                                                reuse=True, scope='content_encoder_A')
-        with tf.device('/gpu:1'):
-            guide_mean, guide_logvar = self.attribute_encoder_concat(self.attribute_image, reuse=True,
-                                                                        scope='attribute_encoder_concat_A')
-            guide_attribute = z_sample(guide_mean, guide_logvar)
-        with tf.device('/gpu:1'):
-            self.fusion = self.Decoder(content_A, guide_attribute, feature_A,
-                                        reuse=True)
-        self.content_A = content_A
-
-        for item in filelist:
-            sample_file = os.path.join(os.path.abspath(test_dir), item)
-            num = item.split('.')[0]
-            self.sub_contet_dir = os.path.join(self.result_dir, self.model_dir, 'content_A', str(num))
-            check_folder(self.sub_contet_dir)
-            sample_image, h, w = load_test_data(sample_file, size=self.img_size)
-            sample_image = np.asarray(sample_image)
-            fusion_path = os.path.join(self.fusion_dir, '{}'.format(os.path.basename(sample_file) ))
-            print(fusion_path)
-            attribute_file, h1, w1 = load_test_data(guide_file, size=self.img_size)
-            attribute_file = np.asarray(attribute_file)
-            fusion_image= self.sess.run(self.fusion,
-                feed_dict={self.content_image_A: sample_image,
-                           self.attribute_image: attribute_file})
-            # print('sample_image shape: ', sample_image.shape)
-            sample_image = (sample_image + 1) / 2
-            fusion_image = (fusion_image + 1) / 2
-            # print('fusion_image min vaule: ', np.min(fusion_image))
-            attention_map = 1 - sample_image
-            # fusion_image = alpha * attention_map * fusion_image + 1 * sample_image
-            fusion_image = 2 * fusion_image - 1
-            print('min : ', np.min(fusion_image))
-            print('max : ', np.max(fusion_image))
-            fusion_image = (fusion_image - np.min(fusion_image)) / (np.max(fusion_image) - np.min(fusion_image))
-            save_images(fusion_image, [1, 1], fusion_path)
-            
-    def show_test(self):
-        tf.global_variables_initializer().run()
-        # test_dir = '/data/timer/comparsion/Dataset_resize//{}'.format(self.dataset_name)
-        test_A_dir = './dataset/{}'.format(self.dataset_name + '/over')
-        test_B_dir = './dataset/{}'.format(self.dataset_name + '/under')
-        self.saver = tf.train.Saver()
-        could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-
-        if could_load:
-            print(" [*] Load SUCCESS")
-        else:
-            print(" [!] Load failed...")
-        """ Guided Image Translation """
-
-        filelist = os.listdir(test_A_dir)
-        filelist.sort(key=lambda x: int(x[0:-4]))
-        self.fake_AA_dir = os.path.join(self.result_dir, self.model_dir, 'guide_AA')
-        check_folder(self.fake_AA_dir)
-        self.fake_AB_dir = os.path.join(self.result_dir, self.model_dir, 'guide_AB')
-        check_folder(self.fake_AB_dir)
-        self.fake_BB_dir = os.path.join(self.result_dir, self.model_dir, 'guide_BB')
-        check_folder(self.fake_BB_dir)
-        self.fake_BA_dir = os.path.join(self.result_dir, self.model_dir, 'guide_BA')
-        check_folder(self.fake_BA_dir)
-        guide_file = r'guide/7.JPG'
-        alpha = 0.8
-        guide_name = os.path.basename(guide_file)
-        guide_num = guide_name.split('.')[0]
-        
-        # self.fusion_dir = os.path.join(self.result_dir, self.model_dir, self.dataset_name+ '_' + str(alpha)) 
-        self.fusion_dir = os.path.join(self.result_dir, self.model_dir, self.dataset_name+ '_fusion') 
-        print(self.fusion_dir)
-        check_folder(self.fusion_dir)
-        # self.content_dir = os.path.join(self.result_dir, self.model_dir, 'content')
-        # check_folder(self.content_dir)
-        file_num = len(filelist)
-        self.content_image_A = tf.placeholder(tf.float32, [1, None, None, self.img_ch],
-                                              name='content_image_A')
-        self.content_image_B = tf.placeholder(tf.float32, [1, None, None, self.img_ch],
-                                              name='content_image_B')
-        self.attribute_image = tf.placeholder(tf.float32, [1, None, None, self.img_ch],
-                                              name='guide_attribute_image')
-        with tf.device('/gpu:0'):
-            content_A, feature_A = self.content_encoder(self.content_image_A, is_training=False,
+            if self.direction == 'a2b':
+                with tf.device('/gpu:1'):
+                    content_A, feature_A = self.content_encoder(self.content_image_A, is_training=False,
                                                         reuse=True, scope='content_encoder_A')
-            content_B, feature_B = self.content_encoder(self.content_image_B, is_training=False,
-                                                        reuse=True, scope='content_encoder_A')
-        with tf.device('/gpu:0'):
-            mean_A, logvar_A = self.attribute_encoder_concat(self.content_image_A, reuse=True,
-                                                             scope='attribute_encoder_concat_A')
-            attribute_A = z_sample(mean_A, logvar_A)
+                with tf.device('/gpu:1'):
+                    guide_mean, guide_logvar = self.attribute_encoder_concat(self.attribute_image, reuse=True,
+                                                                                scope='attribute_encoder_concat_A')
+                    guide_attribute = z_sample(guide_mean, guide_logvar)
+                with tf.device('/gpu:1'):
+                    self.fusion = self.Decoder(content_A, guide_attribute, feature_A,
+                                                reuse=True)
+                self.content_A = content_A
 
-            mean_B, logvar_B = self.attribute_encoder_concat(self.content_image_B, reuse=True,
-                                                             scope='attribute_encoder_concat_A')
-            attribute_B = z_sample(mean_B, logvar_B)
-        # self.guide_fake_B = self.Decoder(content_B=content_A + content_B, attribute_A=guide_attribute_B,
-        #                                    reuse=True)
-        # self.reconstruct_A = self.Decoder(guide_content_A, guide_attribute_A, reuse=True)
-        with tf.device('/gpu:1'):
-            self.fake_AA = self.Decoder(content_A, attribute_A, feature_A, reuse=True)
-            self.fake_AB = self.Decoder(content_A, attribute_B, feature_A, reuse=True)
-            self.fake_BA = self.Decoder(content_B, attribute_A, feature_B, reuse=True)
-            self.fake_BB = self.Decoder(content_B, attribute_B, feature_B, reuse=True)
-        # self.fusion = self.Decoder(1 * content_A + 1 * content_B, guide_attribute_B, reuse=True)
-        # content_fusion = fusion_content(content_A, content_B)
-        # feature_A1 = [0.01 * x for x in feature_A]
-        # feature_B1 = [0.99 * x for x in feature_B]
-
-        #     self.fusion = self.Decoder(content_A, guide_attribute, feature_A,
-        #                                 reuse=True)
-        self.content_A = content_A
-
-        for item in filelist:
-            # sample_file = os.path.join(os.path.abspath(test_dir), item)
-            sample_file_A = os.path.join(os.path.abspath(test_A_dir), item)
-            sample_file_B = os.path.join(os.path.abspath(test_B_dir), item)
-            num = item.split('.')[0]
-            print(num)
-            self.sub_contet_dir = os.path.join(self.result_dir, self.model_dir, 'content_A', str(num))
-            check_folder(self.sub_contet_dir)
-            sample_image_A, h, w = load_test_data(sample_file_A, size=self.img_size)
-            sample_image_A = np.asarray(sample_image_A)
-            sample_image_B, h, w = load_test_data(sample_file_B, size=self.img_size)
-            sample_image_B = np.asarray(sample_image_B)
-            
-            fake_AA_path = os.path.join(self.fake_AA_dir, '{}'.format(os.path.basename(sample_file_A)))
-            fake_AB_path = os.path.join(self.fake_AB_dir, '{}'.format(os.path.basename(sample_file_A)))
-            fake_BB_path = os.path.join(self.fake_BB_dir, '{}'.format(os.path.basename(sample_file_A)))
-            fake_BA_path = os.path.join(self.fake_BA_dir, '{}'.format(os.path.basename(sample_file_A)))
-            fusion_path = os.path.join(self.fusion_dir, '{}'.format(os.path.basename(sample_file_A)))
-            print(fusion_path)
-            attribute_file, h1, w1 = load_test_data(guide_file, size=self.img_size)
-            attribute_file = np.asarray(attribute_file)
-            fake_AA, fake_AB, fake_BA, fake_BB = self.sess.run(
-                [self.fake_AA, self.fake_AB, self.fake_BA, self.fake_BB],
-                feed_dict={self.content_image_A: sample_image_A,
-                           self.content_image_B: sample_image_B,
-                           self.attribute_image: attribute_file})
-
-            # fake_AA, fake_AB, fake_BB, fake_BA, fusion_image = self.sess.run([self.fake_AA, self.fake_AB, self.fake_BB, self.fake_BA, self.fusion],
-            #                                   feed_dict={self.content_image: sample_image,
-            #                                              self.attribute_image: attribute_file})
-
-            # print('sample_image shape: ', sample_image.shape)
-            # sample_image_A = (sample_image_A + 1) / 2
-            # fusion_image = (fusion_image + 1) / 2
-            # # print('fusion_image min vaule: ', np.min(fusion_image))
-            # attention_map = 1 - sample_image_A
-            
-            # # fusion_image = alpha * attention_map * fusion_image + 1 * sample_image
-            # fusion_image = 2 * fusion_image - 1
-            save_images(fake_AA, [1, 1], fake_AA_path)
-            save_images(fake_AB, [1, 1], fake_AB_path)
-            save_images(fake_BA, [1, 1], fake_BA_path)
-            save_images(fake_BB, [1, 1], fake_BB_path)
-            
+            for item in filelist:
+                sample_file = os.path.join(os.path.abspath(test_dir), item)
+                sample_image, h, w = load_test_data(sample_file, size=self.img_size)
+                sample_image = np.asarray(sample_image)
+                save_path = os.path.join(self.save_dir, '{}'.format(os.path.basename(sample_file) ))
+                print(save_path)
+                attribute_file, h1, w1 = load_test_data(guide_file, size=self.img_size)
+                attribute_file = np.asarray(attribute_file)
+                fusion_image, content_A = self.sess.run(
+                    [self.fusion, self.content_A],
+                    feed_dict={self.content_image_A: sample_image,
+                               self.attribute_image: attribute_file})
+                sample_image = (sample_image + 1) / 2
+                fusion_image = (fusion_image + 1) / 2
+                attention_map = 1 - sample_image
+                fusion_image = 2 * fusion_image - 1                
+                fusion_image = (fusion_image - np.min(fusion_image)) / (np.max(fusion_image) - np.min(fusion_image))
+                save_images(fusion_image, [1, 1], save_path)
