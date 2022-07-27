@@ -21,12 +21,17 @@ Network architecture of the content encoder, attribute encoder, and generator.
  - [ ] opencv 3.4.2 
 
  ### To Train
- Please place the underexposed images from the [MEF](https://github.com/csjcai/SICE) dataset in **./dataset/over2under/trainA** 
-	and put the overexposed images in **./dataset/over2under/trainB**
+ Please load the training dataset from [here](ttps://pan.baidu.com/s/1v9OclGBFX-BTXZTSgfcL9Q?pwd=DRLI) and place it in this project.
+
 	
 Then, training the disentanglement model by entering the following code
 
     CUDA_VISIBLE_DEVICES=0,1 python main.py --phase train --dataset over2under
+
+Moreover, you also could place the underexposed images from the [MEF](https://github.com/csjcai/SICE) dataset in **./dataset/over2under/trainA** 
+	and put the overexposed images in **./dataset/over2under/trainB**.
+	Then rewrite the dataloader to load your dataset and retrain your model.
+	
 **Note**:  the training of the disentanglement model is extremely unstable and may not yields an excellent model. 
 ### To Test
 
