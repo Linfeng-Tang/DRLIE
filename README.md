@@ -30,7 +30,7 @@ Then, training the disentanglement model by entering the following code
 
 Moreover, you also could place the underexposed images from the [MEF](https://github.com/csjcai/SICE) dataset in **./dataset/over2under/trainA** 
 	and put the overexposed images in **./dataset/over2under/trainB**.
-	Then rewrite the dataloader to load your dataset and retrain your model.
+	Then, rewrite the dataloader to load your dataset and retrain your model.
 	
 **Note**:  the training of the disentanglement model is extremely unstable and may not yields an excellent model. 
 ### To Test
