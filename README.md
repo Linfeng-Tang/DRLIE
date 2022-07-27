@@ -21,7 +21,7 @@ Network architecture of the content encoder, attribute encoder, and generator.
  - [ ] opencv 3.4.2 
 
  ### To Train
- Please load the training dataset from [here](ttps://pan.baidu.com/s/1v9OclGBFX-BTXZTSgfcL9Q?pwd=DRLI) and place it in this project.
+ Please load the training dataset from [here](https://pan.baidu.com/s/1v9OclGBFX-BTXZTSgfcL9Q?pwd=DRLI) and place it in this project.
 
 	
 Then, training the disentanglement model by entering the following code
